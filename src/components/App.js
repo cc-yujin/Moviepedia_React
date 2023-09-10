@@ -1,6 +1,7 @@
 import ReviewList from './ReviewList';
 import { useEffect, useState } from 'react';
 import { getReviews } from '../api';
+import ReviewForm from './ReviewForm';
 
 const LIMIT = 6; // 6개씩 추가로 보여줌
 
@@ -9,6 +10,8 @@ function App() {
   const [items, setItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [hasNext, setHasNext] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingError, setLoadingError] = useState(null);
 
   const sortedItems = [...items].sort((a, b) => b[order] - a[order]);
 
@@ -23,7 +26,18 @@ function App() {
 
   // 2. 로드 함수 실행.
   const handleLoad = async (options) => {
-    const { reviews, paging } = await getReviews(options);
+    let result;
+    try {
+      setIsLoading(true); // 로딩중
+      setLoadingError(null); // 일단 에러 null
+      result = await getReviews(options); // 받아옴
+    } catch (error) {
+      setLoadingError(error); // error를 setLoadingError
+      return;
+    } finally {
+      setIsLoading(false); // 로딩 끝났으면 false로 set
+    }
+    const { paging, reviews } = result;
     if (options.offset === 0) {
       setItems(reviews);
     } else {
@@ -49,13 +63,16 @@ function App() {
         <button onClick={handleNewestClick}>최신순</button>
         <button onClick={handleBestClick}>베스트순</button>
       </div>
+      <ReviewForm />
       <ReviewList items={sortedItems} onDelete={handleDelete} />
-      {hasNext && <button onClick={handleLoadMore}>더 보기</button>}
+      {hasNext && (
+        <button disabled={isLoading} onClick={handleLoadMore}>
+          더 보기
+        </button>
+      )}
+      {loadingError?.message && <span>{loadingError.message}</span>}
     </div>
   );
 }
 
 export default App;
-
-// https://learn.codeit.kr/9817/film-reviews/
-// https://learn.codeit.kr/1636/foods/
