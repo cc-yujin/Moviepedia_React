@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 
-function FileInput({ name, value, onChange }) {
-  const [preview, setPreview] = useState();
+function FileInput({ name, value, initialPreview, onChange }) {
+  const [preview, setPreview] = useState(initialPreview);
 
   const inputRef = useRef();
 
@@ -28,10 +28,10 @@ function FileInput({ name, value, onChange }) {
       // 정리함수. 
       // 실행 시점: 새로운 콜백함수 호출 실행 전(앞에서 실행한 콜백의 사이드 이펙트 정리), 
       // 컴포넌트가 화면에서 사라지기 전(맨 마지막으로 실행한 콜백의 사이드 이펙트 정리)
-      setPreview();
+      setPreview(initialPreview); // 초기화
       URL.revokeObjectURL(nextPreview);
     };
-  }, [value]);
+  }, [value, initialPreview]);
 
   return (
     <div>
