@@ -1,7 +1,8 @@
 import ReviewList from './ReviewList';
-import { useEffect, useState } from 'react';
-import { createReview, getReviews, updateReview } from '../api';
+import { useCallback, useEffect, useState } from 'react';
+import { createReview, deleteReview, getReviews, updateReview } from '../api';
 import ReviewForm from './ReviewForm';
+import useAsync from '../hooks/useAsync';
 
 const LIMIT = 6; // 6개씩 보여줌
 
@@ -11,8 +12,7 @@ function App() {
 
   const [offset, setOffset] = useState(0);
   const [hasNext, setHasNext] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingError, setLoadingError] = useState(null);
+  const [isLoading, loadingError, getReviewsAsync] = useAsync(getReviews);
 
   const sortedItems = [...items].sort((a, b) => b[order] - a[order]); //정렬함수
 
@@ -20,18 +20,10 @@ function App() {
   const handleBestClick = () => setOrder('rating');
 
   // 리스트 로딩 (첫렌더링, 더보기)
-  const handleLoad = async (options) => {
-    let result;
-    try {
-      setIsLoading(true); // 로딩중
-      setLoadingError(null); // 일단 에러 없는 상태
-      result = await getReviews(options); // 받아옴
-    } catch (error) {
-      setLoadingError(error); // error를 setLoadingError
-      return;
-    } finally {
-      setIsLoading(false); // 로딩 끝났으면 false로 set
-    }
+  const handleLoad = useCallback( async (options) => {
+    let result = await getReviewsAsync(options);
+    if (!result) return; // 에러가 난 경우 undefined 이기 때문에, 뒷부분 실행 하지 않기 위해.
+    
     const { paging, reviews } = result;
     if (options.offset === 0) {
       setItems(reviews);
@@ -40,7 +32,7 @@ function App() {
     }
     setOffset(options.offset + reviews.length);
     setHasNext(paging.hasNext);
-  };
+  }, [getReviewsAsync]);
 
   // 더보기
   const handleLoadMore = () => {
@@ -65,15 +57,16 @@ function App() {
   };
 
   // 글 삭제
-  const handleDelete = (id) => {
-    const nextItems = items.filter((item) => item.id !== id);
-    setItems(nextItems);
+  const handleDelete = async (id) => {
+    const result = await deleteReview(id);
+    if (!result) return;
+    setItems((prevItems) => prevItems.filter((item)=> item.id !== id));
   };
 
   // 맨처음 렌더링 될 때, order 스테이트 변경될 때마다
   useEffect(() => {
     handleLoad({ order, offset: 0, limit: LIMIT });
-  }, [order]); 
+  }, [order, handleLoad]); 
 
   return (
     <div>
@@ -88,8 +81,8 @@ function App() {
       <ReviewList
         items={sortedItems}
         onDelete={handleDelete}
-        onUpdate={updateReview}
-        onUpdateSuccess={handleUpdateSuccess}
+        onUpdate={updateReview} // api
+        onUpdateSuccess={handleUpdateSuccess} // 글 수정 함수
       />
       {hasNext && (
         <button disabled={isLoading} onClick={handleLoadMore}>

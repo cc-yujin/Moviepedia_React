@@ -39,7 +39,7 @@ function ReviewList({ items, onDelete, onUpdate, onUpdateSuccess }) {
     <ul>
       {items.map((item) => {
         if (item.id === editingId) {
-          // 2. 수정중일 때 리뷰폼 보여줌
+          // 수정중일 때 리뷰폼 보여줌
           const { id, imgUrl, title, rating, content } = item;
           const initialValues = { title, rating, content };
 
