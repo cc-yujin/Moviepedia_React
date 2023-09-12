@@ -19,15 +19,27 @@ function ReviewListItem({ item, onDelete, onEdit }) {
   };
 
   return (
-    <div className='ReviewListItem'>
-      <img className='ReviewListItem-img' src={item.imgUrl} alt={item.title} />
-      <div>
-        <h1>{item.title}</h1>
-        <Rating value={item.rating} />
-        <p>{formatDate(item.createdAt)}</p>
-        <p>{item.content}</p>
-        <button onClick={handleEditClick}>{t('edit button')}</button>
-        <button onClick={handleDeleteClick}>{t('delete button')}</button>
+    <div className="ReviewListItem" key={item.id}>
+      <img className="ReviewListItem-img" src={item.imgUrl} alt={item.title} />
+      <div className="ReviewListItem-rows">
+        <h1 className="ReviewListItem-title">{item.title}</h1>
+        <Rating className="ReviewListItem-rating" value={item.rating} />
+        <p className="ReviewListItem-date">{formatDate(item.createdAt)}</p>
+        <p className="ReviewListItem-content">{item.content}</p>
+        <div className="ReviewListItem-buttons">
+          <button
+            className="ReviewListItem-edit-button"
+            onClick={handleEditClick}
+          >
+            {t('edit button')}
+          </button>
+          <button
+            className="ReviewListItem-delete-button"
+            onClick={handleDeleteClick}
+          >
+            {t('delete button')}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -39,12 +51,11 @@ function ReviewList({ items, onDelete, onUpdate, onUpdateSuccess }) {
   const handleCancel = () => setEditingId(null);
 
   return (
-    <ul>
+    <ul className="ReviewList">
       {items.map((item) => {
         if (item.id === editingId) {
-          // 수정중일 때 리뷰폼 보여줌
           const { id, imgUrl, title, rating, content } = item;
-          const initialValues = { title, rating, content };
+          const initialValues = { title, rating, content, imgFile: null };
 
           const handleSubmit = (formData) => onUpdate(id, formData);
 
@@ -58,15 +69,14 @@ function ReviewList({ items, onDelete, onUpdate, onUpdateSuccess }) {
               <ReviewForm
                 initialValues={initialValues}
                 initialPreview={imgUrl}
-                onCancel={handleCancel}
                 onSubmit={handleSubmit}
                 onSubmitSuccess={handleSubmitSuccess}
+                onCancel={handleCancel}
               />
             </li>
           );
         }
         return (
-          // 1. 기본적으로 리뷰리스트 보여줌
           <li key={item.id}>
             <ReviewListItem
               item={item}

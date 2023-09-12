@@ -1,21 +1,35 @@
-import ReviewList from './ReviewList';
 import { useCallback, useEffect, useState } from 'react';
-import { createReview, deleteReview, getReviews, updateReview } from '../api';
+import ReviewList from './ReviewList';
 import ReviewForm from './ReviewForm';
+import { createReview, deleteReview, getReviews, updateReview } from '../api';
 import useAsync from '../hooks/useAsync';
 import LocaleSelect from './LocaleSelect';
-import { LocaleProvider } from '../contexts/LocaleContext';
+import './App.css';
+import logoImg from '../assets/logo.png';
+import ticketImg from '../assets/ticket.png';
+import useTranslate from '../hooks/useTranslate';
 
 const LIMIT = 6; // 6개씩 보여줌
 
+function AppSortButton({ selected, children, onClick }) {
+  return (
+    <button
+      disabled={selected}
+      className={`AppSortButton ${selected ? 'selected' : ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 function App() {
+  const t = useTranslate();
   const [order, setOrder] = useState('createdAt'); //정렬
   const [items, setItems] = useState([]);
-
   const [offset, setOffset] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [isLoading, loadingError, getReviewsAsync] = useAsync(getReviews);
-
   const sortedItems = [...items].sort((a, b) => b[order] - a[order]); //정렬함수
 
   const handleNewestClick = () => setOrder('createdAt');
@@ -74,31 +88,65 @@ function App() {
   }, [order, handleLoad]);
 
   return (
-    <LocaleProvider defaultValue={'ko'}>
-      <div>
-        <LocaleSelect />
-        <div>
-          <button onClick={handleNewestClick}>최신순</button>
-          <button onClick={handleBestClick}>베스트순</button>
+    <div className='App'>
+      <nav className='App-nav'>
+        <div className='App-nav-container'>
+          <img className='App-logo' src={logoImg} alt='MOVIE PEDIA' />
+          <LocaleSelect />
         </div>
-        <ReviewForm
-          onSubmit={createReview}
-          onSubmitSuccess={handleCreateSuccess}
-        />
-        <ReviewList
-          items={sortedItems}
-          onDelete={handleDelete}
-          onUpdate={updateReview} // api
-          onUpdateSuccess={handleUpdateSuccess} // 글 수정 함수
-        />
-        {hasNext && (
-          <button disabled={isLoading} onClick={handleLoadMore}>
-            더 보기
-          </button>
-        )}
-        {loadingError?.message && <span>{loadingError.message}</span>}
+      </nav>
+
+      <div className='App-container'>
+        <div
+          className='App-ReviewForm'
+          style={{ backgroundImage: `url('${ticketImg}')` }}
+        >
+          <ReviewForm
+            onSubmit={createReview}
+            onSubmitSuccess={handleCreateSuccess}
+          />
+        </div>
+        <div className='App-sorts'>
+          <AppSortButton
+            selected={order === 'createAt'}
+            onClick={handleNewestClick}
+          >
+            {t('newest')}
+          </AppSortButton>
+          <AppSortButton
+            selected={order === 'rating'}
+            onClick={handleBestClick}
+          >
+            {t('best')}
+          </AppSortButton>
+        </div>
+        <div className='App-ReviewList'>
+          <ReviewList
+            items={sortedItems}
+            onDelete={handleDelete}
+            onUpdate={updateReview} // api
+            onUpdateSuccess={handleUpdateSuccess} // 글 수정 함수
+          />
+          {hasNext ? (
+            <button
+              className='App-load-more-button'
+              disabled={isLoading}
+              onClick={handleLoadMore}
+            >
+              {t('load more')}
+            </button>
+          ) : (
+            <div className='App-load-more-button' />
+          )}
+          {loadingError?.message && <span>{loadingError.message}</span>}
+        </div>
       </div>
-    </LocaleProvider>
+      <footer className='App-footer'>
+        <div className='App-footer-container'>
+          {t('terms of service')} | {t('privacy policy')}
+        </div>
+      </footer>
+    </div>
   );
 }
 
